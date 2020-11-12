@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-int nV, numA, inf = INT_MAX, f = 0, r = -1;
+int numA, inf = INT_MAX, f = 0, r = -1;
 
 struct Aresta {//Node para a lista encadeadas de Arestas. Representa uma Aresta no grafo 
 	int destino;
@@ -73,6 +73,18 @@ void inserirVertice(Grafo** a, int num) // insere Vertice no Grafo
 		(*a)->vertices = newhead;
 	}
 	v->arestas = NULL;
+}
+
+Grafo* initGrafo(int n) {
+	Grafo* g = (Grafo*)malloc(sizeof(Grafo));
+	g->vertices = NULL;
+	g->nArestas = 0;
+	for (int i = 0; i < n; i++) {
+		inserirVertice(&g, i);
+	}
+	g->nVertices = n;
+	return g;
+
 }
 
 Aresta* initAresta(int destino, int origem, int peso, Aresta* next, Aresta* prev) { //inicia a uma Aresta
@@ -156,6 +168,7 @@ void printGrafo(Grafo** graf, bool printfSupers) { //função que imprime o graf
 
 void calculaGrau(Grafo** graf) //essa função calcula o grau de cada vértice do grafo, tem como parametro o grafo
 {
+	int nV = (*graf)->nVertices;
 	int** matriz = (int**)malloc(sizeof(int*) * nV); //é criada uma matriz através de alocação dinamica
 	for (int i = 0; i < nV; i++) {
 		matriz[i] = (int*)calloc(sizeof(int), nV);
@@ -199,6 +212,7 @@ float grauMedioGrafo(Grafo** graf) //essa função é utilizada para calcular o 
 //do grau de todos os vértices, e divide pela quantidade de vértices. A função recebe como parâmetro o grafo no qual se deseja
 //saber o grau médio.
 {
+	int nV = (*graf)->nVertices;
 	int somaGrau = 0;
 	Vertice* vertice = (*graf)->vertices;
 	if (vertice != NULL) {
@@ -215,10 +229,12 @@ float grauMedioGrafo(Grafo** graf) //essa função é utilizada para calcular o 
 	return grauMedio; //ao final, a função retorna esse valor (grau médio do grafo) para quem a chamou.
 }
 
-int carrega(Grafo** graf, char* _arq1, char* _arq2) 
+Grafo* carrega( char* _arq1, char* _arq2) 
 //essa função é utilizada para realizar o carregamento dos arquivos de
 //entrada e saída. Recebe como parâmetros o grafo, um ponteiro para o arquivo de entrada e outro para o arquivo de saída
 {
+
+	int nV;
 	FILE* f, * f2;
 	int origem, destino, peso;
 	f = fopen(_arq1, "r"); //arquivo de entrada
@@ -230,11 +246,9 @@ int carrega(Grafo** graf, char* _arq1, char* _arq2)
 	};
 
 	fscanf(f, "%d", &nV); //utilizado para ler do arquivo de entrada o número de vértices do grafo
+	Grafo* graf = initGrafo(nV);
 	fprintf(f2, "%d\n", nV); //utilizado para escrever no arquivo de saída o número de vértices do grafo
-	for (int i = 0; i < nV; i++) {
-		inserirVertice(graf, i);
-	}
-	numA = 0;
+    
 	while (!feof(f)) {
 		fscanf(f, "%d %d %d", &origem, &destino, &peso); //utilizado para ler do arquivo de entrada a origem, destino e peso de cada aresta
 		Aresta* b = (Aresta*)malloc(sizeof(Aresta));
@@ -242,15 +256,15 @@ int carrega(Grafo** graf, char* _arq1, char* _arq2)
 		b->origem = origem;
 		b->destino = destino;
 		b->next = nullptr;
-		inserirAresta(graf, origem, b->destino, b->peso);
-		Aresta* a = getAresta(graf, origem, destino);
+		inserirAresta(&graf, origem, b->destino, b->peso);
+		Aresta* a = getAresta(&graf, origem, destino);
 	};
-	calculaGrau(graf);
-	fprintf(f2, "%d\n", (*graf)->nArestas); //utilizado para escrever no arquivo de saída o número de arestas do grafo
-	fprintf(f2, "%f\n", grauMedioGrafo(graf)); //utilizado para escrever no arquivo de saída o grau médio do grafo
+	calculaGrau(&graf);
+	fprintf(f2, "%d\n", graf->nArestas); //utilizado para escrever no arquivo de saída o número de arestas do grafo
+	fprintf(f2, "%f\n", grauMedioGrafo(&graf)); //utilizado para escrever no arquivo de saída o grau médio do grafo
 	for (int i = 0; i < nV; i++) //essa estrutura de repetição é utilizada para calcular a frequência relativa de cada grau do grafo
 	{
-		Vertice* vertice = (*graf)->vertices;
+		Vertice* vertice = graf->vertices;
 		Vertice* v = vertice;
 		float frequencia = 0;
 		int cont = 0;
@@ -267,9 +281,9 @@ int carrega(Grafo** graf, char* _arq1, char* _arq2)
 
 	fclose(f);
 	fclose(f2);
-	return 1;
+	return graf;
 }
-void caminhamentoLargura(int** matriz, int visitado[], int q[], int verticeInicial)
+void caminhamentoLargura(int** matriz, int visitado[], int q[], int verticeInicial,int nV)
 {
 	for (int i = 0; i < nV; i++)
 		if (matriz[verticeInicial][i] && !visitado[i])
@@ -277,12 +291,12 @@ void caminhamentoLargura(int** matriz, int visitado[], int q[], int verticeInici
 	if (f <= r)
 	{
 		visitado[q[f]] = 1;
-		caminhamentoLargura(matriz, visitado, q, q[f++]);
+		caminhamentoLargura(matriz, visitado, q, q[f++],nV);
 	}
 
 
 }
-void buscaLargura_Grafo(int ini, int* visitado, int** matrizAdj) {
+void buscaLargura_Grafo(int ini, int* visitado, int** matrizAdj,int nV) {
 	int i, vert, cont = 1;
 	int* fila, IF = 0, FF = 0;
 	for (i = 0; i < nV; i++)
@@ -307,20 +321,20 @@ void buscaLargura_Grafo(int ini, int* visitado, int** matrizAdj) {
 	for (i = 0; i < nV; i++)
 		printf("%d -> %d\n", i, visitado[i]);
 }
-void caminhamentoProfundidade(int** matrizAdj, int visitado[], int verticeInicial)
+void caminhamentoProfundidade(int** matrizAdj, int visitado[], int verticeInicial,int nV)
 {
 	visitado[verticeInicial] = 1;
 	for (int i = 0; i < nV; i++) {
 		if (matrizAdj[verticeInicial][i] && !visitado[i])
 		{
 			printf("%d->%d\n", verticeInicial, i);
-			caminhamentoProfundidade(matrizAdj, visitado, i);
+			caminhamentoProfundidade(matrizAdj, visitado, i,nV);
 
 		}
 	}
 }
 
-int distanciaMinima(int dist[], bool vetor_b[]) {
+int distanciaMinima(int dist[], bool vetor_b[],int nV) {
 	int min = INT_MAX, indice_minimo;
 
 	for (int v = 0; v < nV; v++)
@@ -330,7 +344,7 @@ int distanciaMinima(int dist[], bool vetor_b[]) {
 	return indice_minimo;
 }
 
-void imprimeSolucao(int vetorDist[]) {
+void imprimeSolucao(int vetorDist[],int nV) {
 	// printf("Vertice Distancia da origem\n");
 	for (int i = 0; i < nV; i++)
 		printf(
@@ -339,7 +353,7 @@ void imprimeSolucao(int vetorDist[]) {
 			vetorDist[i]);
 }
 
-void dijkstra(int** matrizAdj, int origem) {
+void dijkstra(int** matrizAdj, int origem,int nV) {
 	int* dist = (int*)calloc(sizeof(int), nV);
 	bool* vetor_b = (bool*)calloc(sizeof(bool), nV);
 	for (int i = 0; i < nV; i++) {
@@ -348,7 +362,7 @@ void dijkstra(int** matrizAdj, int origem) {
 	dist[origem] = 0;
 
 	for (int count = 0; count < nV - 1; count++) {
-		int u = distanciaMinima(dist, vetor_b);
+		int u = distanciaMinima(dist, vetor_b,nV);
 		vetor_b[u] = true;
 		for (int v = 0; v < nV; v++)
 			if (!vetor_b[v] && matrizAdj[u][v] && dist[u] != INT_MAX &&
@@ -357,10 +371,11 @@ void dijkstra(int** matrizAdj, int origem) {
 			}
 	}
 
-	imprimeSolucao(dist);
+	imprimeSolucao(dist,nV);
 }
 
-void floyd(int** matrizAdj) {
+void floyd(int** matrizAdj, int nV) {
+	
 	int** matrizDist = (int**)malloc(sizeof(int*) * nV);
 	for (int i = 0; i < nV; i++) {
 		matrizDist[i] = (int*)calloc(sizeof(int), nV);
@@ -466,24 +481,38 @@ void printVertice(Vertice** v, int n) {
 
 	printf("}\n");
 }
-
-void teste(Grafo** graf) {
-	Vertice** vertices = NULL;
-	(vertices) = (Vertice**)malloc(sizeof(Vertice) * nV);
-	listVertice(graf, vertices);
-	printVertice(vertices, nV);
-	sortVertice(vertices, nV);
-	printVertice(vertices, nV);
+bool temVertice(Grafo** graf, int num){
+	if (getVertice(graf, num) == NULL)
+		return false;
+	return true;
+	
+}
+bool temTodosVertices(Grafo** graf, Grafo** graf2) {
+	Vertice* vertices = (*graf)->vertices;
+	while (vertices != NULL)
+	{
+		if (temVertice(graf2,vertices->numero))
+			return false;
+		vertices = vertices->next;
+	}
+	return true;
 }
 
 void MSTprim(Grafo** graf) {
 
 }
 void MSTKruskal(Grafo** graf) {
-
-
+	Grafo* grafoAux = initGrafo(0);
+	int nA = (*graf)->nArestas;
+	Aresta** arestas = NULL;
+	(arestas) = (Aresta**)malloc(sizeof(Aresta) * nA);
+	listAresta(graf, arestas);
+	sortAresta(arestas, nA);
+	for (int i = 0; i < nA; i++)
+		if (temVertice(&grafoAux, arestas[i]->origem))
+			break;
 }
-void chama_caminhamentoLargura(int** matriz, int verticeOrigem)
+void chama_caminhamentoLargura(int** matriz, int verticeOrigem,int nV)
 {
 	printf("\n\nVertice origem: %d \n", verticeOrigem);
 	int* visitado = (int*)calloc(sizeof(int), nV);
@@ -493,14 +522,14 @@ void chama_caminhamentoLargura(int** matriz, int verticeOrigem)
 		visitado[j] = 0;
 		q[j] = 0;
 	}
-	caminhamentoLargura(matriz, visitado, q, verticeOrigem);
+	caminhamentoLargura(matriz, visitado, q, verticeOrigem,nV);
 	for (int k = 0; k < nV; k++) {
 		if (visitado[k]) {
 			printf("%d ", k);
 		}
 	}
 }
-void chama_caminhamentoProfundidade(int** matriz, int verticeOrigem)
+void chama_caminhamentoProfundidade(int** matriz, int verticeOrigem,int nV)
 {
 	printf("\n\nVertice origem: %d \n", verticeOrigem);
 	int* visitado = (int*)calloc(sizeof(int), nV);
@@ -509,7 +538,7 @@ void chama_caminhamentoProfundidade(int** matriz, int verticeOrigem)
 	{
 		visitado[j] = 0;
 	}
-	caminhamentoProfundidade(matriz, visitado, verticeOrigem);
+	caminhamentoProfundidade(matriz, visitado, verticeOrigem,nV);
 	int cont = 0;
 	for (int k = 0; k < nV; k++)
 	{
@@ -527,14 +556,12 @@ int main()
 	//as duas linhas abaixo foram utilizadas para garantir o padrão para a execução a ser utilizado pelo professor
 	//char * arquivo1 = argv[1];
 	//char * arquivo2 = argv[2];
-	char arquivo1[] = "grafo_125.txt";
+	char arquivo1[] = "dados.txt";
 	char arquivo2[] = "saida.txt";
 
-	Grafo* graf = (Grafo*)malloc(sizeof(Grafo));
-	graf->vertices = NULL;
-	graf->nArestas=0;
+	Grafo* graf = carrega(arquivo1, arquivo2); //carrega o grafo
+	int nV = graf->nVertices;
 
-	carrega(&graf, arquivo1, arquivo2); //carrega o grafo
 
 	int** matrizAdj = (int**)malloc(sizeof(int*) * nV);
 	for (int i = 0; i < nV; i++) {
@@ -578,30 +605,29 @@ int main()
 		printf("2 - Caminhamento em profundidade \n");
 		printf("3 - Dijkstra: caminho minimo \n");
 		printf("4 - Floyd: caminho minimo \n");
-		printf("5 - Prim: Arvore Geradora \n");
-		printf("6 - Kruskal: Arvore Geradora Minima (POR ENQUANTO USE ESSE PARA TESTAR A FUNÇÃO QUE IMPLEMENTA A ORDENACAO DE VERTICES PELO GRAU -TESTE-) \n");
+		printf("5 - Prim: Arvore Geradora\n");
+		printf("6 - Kruskal: Arvore Geradora Minima \n");
 		printf("7 - Sair \n");
 		printf("Escolha sua opcao: ");
 		scanf("%d", &op);
 		switch (op) {
 		case 1:
-			chama_caminhamentoLargura(matriz, 0);
+			chama_caminhamentoLargura(matriz, 0, graf->nVertices);
 			break;
 		case 2:
-			chama_caminhamentoProfundidade(matriz, 0);
+			chama_caminhamentoProfundidade(matriz, 0, graf->nVertices);
 			break;
 		case 3:
 			printf("\nOrigem: %d \n", 0);
-			dijkstra(matrizAdj, 0);
+			dijkstra(matrizAdj, 0, graf->nVertices);
 			break;
 		case 4:
-			floyd(matrizAdj);
+			floyd(matrizAdj,graf->nVertices);
 			break;
 		case 7:
 			sair = 1;
 			break;
-		case 6:
-			teste(&graf);
+		case 5:
 			break;
 		default:
 			printf("Valor invalido!\n");
