@@ -57,6 +57,18 @@ Vertice* initVertice(int num, Vertice* next, Vertice* prev) {// Inicia um vérti
 	return v;
 };
 
+
+
+Aresta* initAresta(int destino, int origem, int peso, Aresta* next, Aresta* prev) { //inicia a uma Aresta
+	Aresta* a = (Aresta*)malloc(sizeof(Aresta));
+	a->origem = origem;
+	a->destino = destino;
+	a->peso = peso;
+	a->next = next;
+	a->prev = prev;
+
+	return a;
+};
 void inserirVertice(Grafo** a, int num) // insere Vertice no Grafo
 {
 	Vertice* v;
@@ -75,34 +87,15 @@ void inserirVertice(Grafo** a, int num) // insere Vertice no Grafo
 	v->arestas = NULL;
 }
 
-Grafo* initGrafo(int n) {
-	Grafo* g = (Grafo*)malloc(sizeof(Grafo));
-	g->vertices = NULL;
-	g->nArestas = 0;
-	for (int i = 0; i < n; i++) {
-		inserirVertice(&g, i);
-	}
-	g->nVertices = n;
-	return g;
-
-}
-
-Aresta* initAresta(int destino, int origem, int peso, Aresta* next, Aresta* prev) { //inicia a uma Aresta
-	Aresta* a = (Aresta*)malloc(sizeof(Aresta));
-	a->origem = origem;
-	a->destino = destino;
-	a->peso = peso;
-	a->next = next;
-	a->prev = prev;
-
-	return a;
-};
 
 int inserirAresta(Grafo** a, int origem, int destino, int peso) { //função que insere as arestas no grafo
 	Vertice* v = getVertice(a, origem);
 	if (v == NULL)
 		return 1;
 	if (getAresta(a, origem, destino) != NULL)
+		return 1;
+	Vertice* v2 = getVertice(a, destino);
+	if (v2 == NULL)
 		return 1;
 	if ((v)->arestas == NULL) {
 		(v)->arestas = initAresta(destino, v->numero, peso, NULL, NULL);
@@ -114,14 +107,7 @@ int inserirAresta(Grafo** a, int origem, int destino, int peso) { //função que
 		oldhead->prev = newhead;
 		(v)->arestas = newhead;
 	}
-	Vertice* ax = getVertice(a, origem);
-
-	if (v == ax)
-		printf("asd");
-	Vertice* v2 = getVertice(a, destino);
-	if (v2 == NULL)
-		return 1;
-
+	
 	if ((v2)->arestas == NULL)
 		(v2)->arestas = initAresta(origem, v2->numero, peso, NULL, NULL);
 	else {
@@ -134,7 +120,28 @@ int inserirAresta(Grafo** a, int origem, int destino, int peso) { //função que
 	(*a)->nArestas++;
 	return 0;
 }
+int inserirArestaHard(Grafo** g, int origem, int destino, int peso) { //Inseri a aresta, se alguma das pontas não estiver no grafo, insere elas também
+	Vertice* v = getVertice(g, origem);
+	if (v == NULL)
+		inserirVertice(g, origem);
+	Vertice* v2 = getVertice(g, destino);
+	if (v2 == NULL)
+		inserirVertice(g, destino);
+	return inserirAresta(g, origem, destino, peso);
 
+}
+
+Grafo* initGrafo(int n) {
+	Grafo* g = (Grafo*)malloc(sizeof(Grafo));
+	g->vertices = NULL;
+	g->nArestas = 0;
+	for (int i = 0; i < n; i++) {
+		inserirVertice(&g, i);
+	}
+	g->nVertices = n;
+	return g;
+
+}
 void printArestas(Aresta* aresta) { // função que percorre as arestas e as imprime
 	Aresta* a = aresta;
 	while (a != NULL) {
@@ -497,20 +504,22 @@ bool temTodosVertices(Grafo** graf, Grafo** graf2) {
 	}
 	return true;
 }
-
 void MSTprim(Grafo** graf) {
 
 }
-void MSTKruskal(Grafo** graf) {
+
+void MSTKruskal(Grafo** graf) { 
 	Grafo* grafoAux = initGrafo(0);
 	int nA = (*graf)->nArestas;
 	Aresta** arestas = NULL;
 	(arestas) = (Aresta**)malloc(sizeof(Aresta) * nA);
 	listAresta(graf, arestas);
 	sortAresta(arestas, nA);
-	for (int i = 0; i < nA; i++)
-		if (temVertice(&grafoAux, arestas[i]->origem))
-			break;
+	for (int i = 0; i < nA; i++) {
+		if (!temVertice(&grafoAux, arestas[i]->origem) || temVertice(&grafoAux, arestas[i]->destino))
+			inserirArestaHard(&grafoAux, arestas[i]->origem, arestas[i]->destino, arestas[i]->peso);
+	}
+	printGrafo(&grafoAux,false);
 }
 void chama_caminhamentoLargura(int** matriz, int verticeOrigem,int nV)
 {
@@ -627,7 +636,8 @@ int main()
 		case 7:
 			sair = 1;
 			break;
-		case 5:
+		case 6:
+			MSTKruskal(&graf);
 			break;
 		default:
 			printf("Valor invalido!\n");
