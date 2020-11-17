@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <iostream>
+#include <queue>
 int numA, inf = INT_MAX, f = 0, r = -1;
 
 struct Aresta {//Node para a lista encadeadas de Arestas. Representa uma Aresta no grafo 
@@ -41,12 +43,31 @@ Vertice* getVertice(Grafo** a, int num) {
 	return v;
 }
 
+bool temVertice(Grafo** graf, int num) {
+	return(getVertice(graf, num) != NULL);
+
+}
+bool temTodosVertices(Grafo** graf, Grafo** graf2) {
+	Vertice* vertices = (*graf)->vertices;
+	while (vertices != NULL)
+	{
+		if (temVertice(graf2, vertices->numero))
+			return false;
+		vertices = vertices->next;
+	}
+	return true;
+}
+
+
 Aresta* getAresta(Grafo** a, int numV, int numD) {
 	Vertice* v = getVertice(a, numV);
 	Aresta* ar = (v)->arestas;
 	while (ar != NULL && ar->destino != numD)
 		ar = ar->next;
 	return ar;
+}
+bool temAresta(Grafo** a, int numV, int numD) {
+	return !((getAresta(a, numV, numD) == NULL) && (getAresta(a, numV, numD) == NULL)) ;
 }
 
 Vertice* initVertice(int num, Vertice* next, Vertice* prev) {// Inicia um vértice 
@@ -107,7 +128,7 @@ int inserirAresta(Grafo** a, int origem, int destino, int peso) { //função que
 		oldhead->prev = newhead;
 		(v)->arestas = newhead;
 	}
-	
+
 	if ((v2)->arestas == NULL)
 		(v2)->arestas = initAresta(origem, v2->numero, peso, NULL, NULL);
 	else {
@@ -118,6 +139,8 @@ int inserirAresta(Grafo** a, int origem, int destino, int peso) { //função que
 		(v2)->arestas = newhead;
 	}
 	(*a)->nArestas++;
+	(*a)->nArestas++;
+
 	return 0;
 }
 int inserirArestaHard(Grafo** g, int origem, int destino, int peso) { //Inseri a aresta, se alguma das pontas não estiver no grafo, insere elas também
@@ -446,7 +469,7 @@ void printAresta(Aresta** a, int n) {
 	int i;
 	printf("\n{");
 	for (i = 0; i < n ; i++)
-		printf(" %d ", a[i]->peso);
+		printf(" %d->%d (%d)  ", a[i]->origem, a[i]->destino,a[i]->peso);
 
 	printf("}\n");
 }
@@ -488,39 +511,144 @@ void printVertice(Vertice** v, int n) {
 
 	printf("}\n");
 }
-bool temVertice(Grafo** graf, int num){
-	if (getVertice(graf, num) == NULL)
-		return false;
-	return true;
-	
-}
-bool temTodosVertices(Grafo** graf, Grafo** graf2) {
-	Vertice* vertices = (*graf)->vertices;
-	while (vertices != NULL)
-	{
-		if (temVertice(graf2,vertices->numero))
-			return false;
-		vertices = vertices->next;
-	}
-	return true;
-}
 void MSTprim(Grafo** graf) {
 
-}
+		Grafo* grafoAux = initGrafo(0);
+		int nV = (*graf)->nVertices;
+		/*int nA = (*graf)->nArestas;
+		Vertice** vertices = NULL;
+		(vertices) = (Vertice**)malloc(sizeof(Vertice) * nV);
+		listVertice(graf, vertices);
+		sortVertice(vertices, nV);
+		Aresta** arestas = NULL;
+		(arestas) = (Aresta**)malloc(sizeof(Aresta) * nA);
+		listAresta(graf, arestas);
+		sortAresta(arestas, nA);*/
+		int valorCaminho, totalCaminho = 0, cont=0, i=0, k=0;
+		bool visitado[nV];
+		
+		for(int vis=1; vis<nV; vis++){
+			visitado[vis] = false;
+		}
+		
+		visitado[0] = true;
+		
+		while(cont<nV){
+			valorCaminho = 0;
+			for (int j = 0; j < nV; j++) {
+				if(visitado[j]){
+					j++;
+				}
+				Aresta* ar = getAresta(graf, i, j);
+				if(ar!=NULL){
+					if (valorCaminho == 0) {
+						valorCaminho = ar->peso;
+					}
+					else {
+						if (valorCaminho > ar->peso){
+							valorCaminho = ar->peso;
+							k=j;
+						}
+					}
+					
+					i=j;
+					visitado[k]=true;
+					
+				}
+			}
+			totalCaminho = totalCaminho + valorCaminho;
+			cont++;
+		}
 
+		printf("%d", totalCaminho);
+		//printGrafo(&grafoAux, false);
+
+	
+}
+bool visitado(Vertice** visitadas,int k,Vertice* vertice){
+	for (int i = 0; i < k; i++) {
+		if (visitadas[i]->numero == vertice->numero)
+			return true;
+	}
+	return false;
+}
+bool hasPath(Grafo** graf,int origem,int destino) {
+	int k=0;
+	Vertice* v=getVertice(graf,origem);
+	Vertice** visitadas = (Vertice**)malloc((sizeof(Vertice) *(*graf)->nVertices));
+	std::queue <Vertice*> vertices;
+	vertices.push(v);
+	visitadas[k++] = v;
+	while (!vertices.empty())
+	{
+		if (v->numero == destino)
+			return true;
+		v=vertices.front();
+		vertices.pop();
+		Aresta* a = v->arestas;
+		while (a != NULL)
+		{
+			Vertice* aux = getVertice(graf, a->destino);
+			if (!visitado(visitadas, k, aux)) {
+			vertices.push(getVertice(graf, a->destino));
+			visitadas[k++] = aux;
+			}
+			a = a->next;
+	}
+
+	}
+	return false;
+}
 void MSTKruskal(Grafo** graf) { 
-	Grafo* grafoAux = initGrafo(0);
+	Grafo* grafoAux = initGrafo(5);			//inicializa a solução sem arestas
 	int nA = (*graf)->nArestas;
 	Aresta** arestas = NULL;
-	(arestas) = (Aresta**)malloc(sizeof(Aresta) * nA);
-	listAresta(graf, arestas);
-	sortAresta(arestas, nA);
-	for (int i = 0; i < nA; i++) {
-		if (!temVertice(&grafoAux, arestas[i]->origem) || temVertice(&grafoAux, arestas[i]->destino))
-			inserirArestaHard(&grafoAux, arestas[i]->origem, arestas[i]->destino, arestas[i]->peso);
-	}
+	(arestas) = (Aresta**)malloc(sizeof(Aresta*) * nA);
+	listAresta(graf, arestas);  //cria um conjunto com as arestas do grafo
+	sortAresta(arestas,nA);		//ordena as aretas do grafo
+	printAresta(arestas, nA);
+	for (int i = 0; i < nA; i++) { //para cada elemento do conjunto começando pelo de menor peso
+		if ((!hasPath(&grafoAux, arestas[i]->origem, arestas[i]->destino))&&
+			!hasPath(&grafoAux, arestas[i]->destino, arestas[i]->origem)) //se a aresta liga duas arvores que ainda nao estão ligadas
+		{	
+			inserirAresta(&grafoAux, arestas[i]->origem, arestas[i]->destino, arestas[i]->peso); //liga as duas
+			printf("\nnao tem caminho de %d %d \n", arestas[i]->origem, arestas[i]->destino);
+
+		}
+		else{
+			printf("\nja tem caminho de %d %d \n", arestas[i]->origem, arestas[i]->destino);
+		}
+		}
 	printGrafo(&grafoAux,false);
 }
+
+Grafo* grafoVizinho(Grafo** graf) {
+	Grafo* grafoaux = initGrafo(0);
+	Aresta* a;
+	listAresta(graf, &a);
+	for (int i = 0; i < (*graf)->nArestas; i++)
+		if (!temVertice(graf, a->destino))
+			inserirVertice(&grafoaux, a->destino);
+		
+	return grafoaux;
+
+}
+
+bool eDominante(Grafo** graf,Grafo** sol) {
+	Grafo* grafoV;
+	grafoV = grafoVizinho(graf);
+	for (Vertice* vertices = (*graf)->vertices;vertices != NULL;vertices=vertices->next)
+	{
+		if (temVertice(sol, vertices->numero))
+			continue;
+		if (temVertice(&grafoV, vertices->numero))
+			continue;
+		return false;
+	}
+	return true;
+	return false;
+}
+
 void chama_caminhamentoLargura(int** matriz, int verticeOrigem,int nV)
 {
 	printf("\n\nVertice origem: %d \n", verticeOrigem);
@@ -633,6 +761,9 @@ int main()
 		case 4:
 			floyd(matrizAdj,graf->nVertices);
 			break;
+    case 5:
+      MSTprim(&graf);
+      break;
 		case 7:
 			sair = 1;
 			break;
