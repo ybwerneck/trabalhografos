@@ -5,6 +5,7 @@
 #include <string.h>
 #include <iostream>
 #include <queue>
+
 int numA, inf = INT_MAX, f = 0, r = -1;
 
 struct Aresta {//Node para a lista encadeadas de Arestas. Representa uma Aresta no grafo 
@@ -72,8 +73,6 @@ bool temAresta(Grafo** a, int numV, int numD) {
 
 Vertice* initVertice(int num, Vertice* next, Vertice* prev) {// Inicia um vértice 
 	Vertice* v = (Vertice*)malloc(sizeof(Vertice));
-	v->next = next;
-	v->prev = prev;
 	v->numero = num;
 	return v;
 };
@@ -95,14 +94,18 @@ void inserirVertice(Grafo** a, int num) // insere Vertice no Grafo
 	Vertice* v;
 	if ((*a)->vertices == NULL) {
 		v = initVertice(num, NULL, NULL);
-
+		v->next = NULL;
+		v->prev = NULL;
 		(*a)->vertices = v;
+
 	}
 	else {
 		Vertice* oldhead = (*a)->vertices;
 		Vertice* newhead = initVertice(num, oldhead, NULL);
 		v = newhead;
 		oldhead->prev = newhead;
+		newhead->next = oldhead;
+		newhead->prev = NULL;
 		(*a)->vertices = newhead;
 	}
 	v->arestas = NULL;
@@ -176,26 +179,24 @@ void printArestas(Aresta* aresta) { // função que percorre as arestas e as imp
 		a = a->next;
 	}
 }
-void printVertices(Grafo** g, bool printSupers) { //função que percorre os vértices e os imprime
+void printVertices(Grafo** g, bool printGrau) { //função que percorre os vértices e os imprime
 	Vertice* vertice = (*g)->vertices;
 	if (vertice != NULL) {
 		Vertice* v = vertice;
 		while (v != NULL) {
-			printf("No");
-			printf(" (%d) grau (%d) -> ", v->numero, v->grau);
+			printf("No  (%d)",v->numero);		
+			if(printGrau)printf("grau (%) ", v->numero, v->grau);
 			printArestas(v->arestas);
 			printf("\n");
 			v = v->next;
 		}
 	}
 }
-
-void printGrafo(Grafo** graf, bool printfSupers) { //função que imprime o grafo
+void printGrafo(Grafo** graf, bool printfGrau) { //função que imprime o grafo
 	printf("\n\n");
-	printVertices(graf, printfSupers);
+	printVertices(graf, printfGrau);
 	printf("\n\n");
 }
-
 void calculaGrau(Grafo** graf) //essa função calcula o grau de cada vértice do grafo, tem como parametro o grafo
 {
 	int nV = (*graf)->nVertices;
@@ -237,7 +238,6 @@ void calculaGrau(Grafo** graf) //essa função calcula o grau de cada vértice d
 		v = v->next; //vai pro próximo vértice
 	}
 }
-
 float grauMedioGrafo(Grafo** graf) //essa função é utilizada para calcular o grau médio do grafo, ou seja, realiza a soma
 //do grau de todos os vértices, e divide pela quantidade de vértices. A função recebe como parâmetro o grafo no qual se deseja
 //saber o grau médio.
@@ -258,7 +258,6 @@ float grauMedioGrafo(Grafo** graf) //essa função é utilizada para calcular o 
 	grauMedio = float(somaGrau) / nV; //divide-se a soma total dos graus dos vértices pela quantidade de vértices para obter o grau médio.
 	return grauMedio; //ao final, a função retorna esse valor (grau médio do grafo) para quem a chamou.
 }
-
 Grafo* carrega( char* _arq1, char* _arq2) 
 //essa função é utilizada para realizar o carregamento dos arquivos de
 //entrada e saída. Recebe como parâmetros o grafo, um ponteiro para o arquivo de entrada e outro para o arquivo de saída
@@ -363,7 +362,6 @@ void caminhamentoProfundidade(int** matrizAdj, int visitado[], int verticeInicia
 		}
 	}
 }
-
 int distanciaMinima(int dist[], bool vetor_b[],int nV) {
 	int min = INT_MAX, indice_minimo;
 
@@ -373,7 +371,6 @@ int distanciaMinima(int dist[], bool vetor_b[],int nV) {
 
 	return indice_minimo;
 }
-
 void imprimeSolucao(int vetorDist[],int nV) {
 	// printf("Vertice Distancia da origem\n");
 	for (int i = 0; i < nV; i++)
@@ -382,7 +379,6 @@ void imprimeSolucao(int vetorDist[],int nV) {
 			i,
 			vetorDist[i]);
 }
-
 void dijkstra(int** matrizAdj, int origem,int nV) {
 	int* dist = (int*)calloc(sizeof(int), nV);
 	bool* vetor_b = (bool*)calloc(sizeof(bool), nV);
@@ -403,7 +399,6 @@ void dijkstra(int** matrizAdj, int origem,int nV) {
 
 	imprimeSolucao(dist,nV);
 }
-
 void floyd(int** matrizAdj, int nV) {
 	
 	int** matrizDist = (int**)malloc(sizeof(int*) * nV);
@@ -455,7 +450,6 @@ void swap(Aresta* a1, Aresta* a2)
 	*a1 = *a2;
 	*a2 = temp;
 }
-
 void sortAresta(Aresta** arestas, int n)
 {
 	int i, j;
@@ -473,11 +467,10 @@ void printAresta(Aresta** a, int n) {
 
 	printf("}\n");
 }
-
-void listVertice(Grafo** graf, Vertice** vertices) {
+void listVertice(Grafo* graf, Vertice** vertices) {
 
 	int i = 0;
-	Vertice* vertice = (*graf)->vertices;
+	Vertice* vertice = (graf)->vertices;
 	if (vertice != NULL) {
 		Vertice* v = vertice;
 		while(v!=NULL){
@@ -488,28 +481,25 @@ void listVertice(Grafo** graf, Vertice** vertices) {
 
 
 }
-void swap(Vertice* v1, Vertice* v2)
-{
-	Vertice temp = *v1;
-	*v1 = *v2;
-	*v2 = temp;
+void printVertice(Vertice** v, int n) {
+	int i;
+	printf("\n{");
+	for (i = 0; i < n; i++)
+		printf(" %d (%d) ", v[i]->numero, v[i]->grau);
+
+	printf("}\n");
 }
 void sortVertice(Vertice** vertices, int n)
 {
 	int i, j;
-
 	for (i = 0; i < n - 1; i++)
 		for (j = 0; j < n - i - 1; j++)
-			if (vertices[j]->grau > vertices[j + 1]->grau)
-				swap(vertices[j], vertices[j + 1]);
-}
-void printVertice(Vertice** v, int n) {
-	int i;
-	printf("\n{");
-	for (i = 0; i < n ; i++)
-		printf(" %d ", v[i]->grau);
-
-	printf("}\n");
+			if (vertices[j]->grau < vertices[j + 1]->grau)
+			{
+				Vertice* temp = vertices[j];
+				vertices[j] = vertices[j + 1];
+				vertices[j + 1] = temp;
+			}
 }
 void MSTprim(Grafo** graf) {
 
@@ -524,40 +514,25 @@ void MSTprim(Grafo** graf) {
 		(arestas) = (Aresta**)malloc(sizeof(Aresta) * nA);
 		listAresta(graf, arestas);
 		sortAresta(arestas, nA);*/
-		int valorCaminho, totalCaminho = 0, cont=0, i=0, k=0;
-		bool visitado[nV];
-		
-		for(int vis=1; vis<nV; vis++){
-			visitado[vis] = false;
-		}
-		
-		visitado[0] = true;
-		
-		while(cont<nV){
+		int valorCaminho, totalCaminho = 0;
+
+
+		for (int i = 0; i < nV; i++) {
 			valorCaminho = 0;
 			for (int j = 0; j < nV; j++) {
-				if(visitado[j]){
+
+				if (i == j)
 					j++;
-				}
 				Aresta* ar = getAresta(graf, i, j);
-				if(ar!=NULL){
-					if (valorCaminho == 0) {
+				if (valorCaminho == 0) {
+					valorCaminho = ar->peso;
+				}
+				else {
+					if (valorCaminho > ar->peso)
 						valorCaminho = ar->peso;
-					}
-					else {
-						if (valorCaminho > ar->peso){
-							valorCaminho = ar->peso;
-							k=j;
-						}
-					}
-					
-					i=j;
-					visitado[k]=true;
-					
 				}
 			}
 			totalCaminho = totalCaminho + valorCaminho;
-			cont++;
 		}
 
 		printf("%d", totalCaminho);
@@ -606,6 +581,7 @@ void MSTKruskal(Grafo** graf) {
 	(arestas) = (Aresta**)malloc(sizeof(Aresta*) * nA);
 	listAresta(graf, arestas);  //cria um conjunto com as arestas do grafo
 	sortAresta(arestas,nA);		//ordena as aretas do grafo
+	
 	printAresta(arestas, nA);
 	for (int i = 0; i < nA; i++) { //para cada elemento do conjunto começando pelo de menor peso
 		if ((!hasPath(&grafoAux, arestas[i]->origem, arestas[i]->destino))&&
@@ -622,31 +598,58 @@ void MSTKruskal(Grafo** graf) {
 	printGrafo(&grafoAux,false);
 }
 
-Grafo* grafoVizinho(Grafo** graf) {
+Grafo* grafoVizinho(Grafo** graf,Grafo** GrafoReferencia) {
 	Grafo* grafoaux = initGrafo(0);
-	Aresta* a;
-	listAresta(graf, &a);
-	for (int i = 0; i < (*graf)->nArestas; i++)
-		if (!temVertice(graf, a->destino))
-			inserirVertice(&grafoaux, a->destino);
+	Aresta** arestas;
+	int nA = (*GrafoReferencia)->nArestas;
+	(arestas) = (Aresta**)malloc(sizeof(Aresta*) * nA);
+	listAresta(GrafoReferencia, arestas);  //cria um conjunto com as arestas do grafo
+
+	for (int i = 0; i < (*GrafoReferencia)->nArestas; i++)
+		if(temVertice(graf,arestas[i]->origem))
+		if (!temVertice(graf, arestas[i]->destino))
+			inserirVertice(&grafoaux, arestas[i]->destino);
 		
 	return grafoaux;
 
 }
-
 bool eDominante(Grafo** graf,Grafo** sol) {
 	Grafo* grafoV;
-	grafoV = grafoVizinho(graf);
+	grafoV = grafoVizinho(sol,graf);
 	for (Vertice* vertices = (*graf)->vertices;vertices != NULL;vertices=vertices->next)
-	{
-		if (temVertice(sol, vertices->numero))
+	{	if (temVertice(sol, vertices->numero))
 			continue;
 		if (temVertice(&grafoV, vertices->numero))
 			continue;
 		return false;
 	}
 	return true;
-	return false;
+}
+void Guloso(Grafo** graf) {
+	Grafo* grafoV;
+	int nV = (*graf)->nVertices;
+	Vertice** vertices =(Vertice**) malloc(sizeof(Vertice) * nV);
+	int k = 0;
+
+	listVertice(*graf, vertices);
+	sortVertice(vertices, nV);
+	grafoV=initGrafo(0);
+	
+	while (!eDominante(graf, &grafoV))
+	{
+		Vertice* v = vertices[k++];
+		Grafo* gV = grafoVizinho(&grafoV,graf);
+		if(!temVertice(&grafoV,v->numero))
+		if(!temVertice(&gV,v->numero)){
+			inserirVertice(&grafoV,v->numero);
+			
+			
+			
+		}
+	}
+	printf("O conjunto gerador minimo é ");
+	printGrafo(&grafoV,false);
+
 }
 
 void chama_caminhamentoLargura(int** matriz, int verticeOrigem,int nV)
@@ -761,11 +764,8 @@ int main()
 		case 4:
 			floyd(matrizAdj,graf->nVertices);
 			break;
-    case 5:
-      MSTprim(&graf);
-      break;
 		case 7:
-			sair = 1;
+			Guloso(&graf);
 			break;
 		case 6:
 			MSTKruskal(&graf);
