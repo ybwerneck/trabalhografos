@@ -185,7 +185,7 @@ void printVertices(Grafo** g, bool printGrau) { //função que percorre os vért
 		Vertice* v = vertice;
 		while (v != NULL) {
 			printf("No  (%d)",v->numero);		
-			if(printGrau)printf("grau (%) ", v->numero, v->grau);
+			if(printGrau)printf("grau (%d) ", v->numero, v->grau);
 			printArestas(v->arestas);
 			printf("\n");
 			v = v->next;
@@ -625,6 +625,7 @@ bool eDominante(Grafo** graf,Grafo** sol) {
 	}
 	return true;
 }
+
 void Guloso(Grafo** graf) {
 	Grafo* grafoV;
 	int nV = (*graf)->nVertices;
@@ -632,18 +633,16 @@ void Guloso(Grafo** graf) {
 	int k = 0;
 
 	listVertice(*graf, vertices);
-	sortVertice(vertices, nV);
-	grafoV=initGrafo(0);
+	sortVertice(vertices, nV);//ordena as vertice do maior pro menor grau
+	grafoV=initGrafo(0);// inicia a solução vazia
 	
-	while (!eDominante(graf, &grafoV))
+	while (!eDominante(graf, &grafoV)) //enquanto não chegar na soluçao
 	{
-		Vertice* v = vertices[k++];
-		Grafo* gV = grafoVizinho(&grafoV,graf);
-		if(!temVertice(&grafoV,v->numero))
-		if(!temVertice(&gV,v->numero)){
-			inserirVertice(&grafoV,v->numero);
-			
-			
+		Vertice* v = vertices[k++]; //começando do vertice de maior grau ate o de menor grau
+		Grafo* gV = grafoVizinho(&grafoV, graf); 
+		if(!temVertice(&grafoV,v->numero)) // se o vertice nao esta na solução
+		if(!temVertice(&gV,v->numero)){// e se o vertice nao é vizinho de nenhum vertice que esta na solução
+			inserirVertice(&grafoV, v->numero); //insere o vertice na solução
 			
 		}
 	}
@@ -651,7 +650,6 @@ void Guloso(Grafo** graf) {
 	printGrafo(&grafoV,false);
 
 }
-
 void chama_caminhamentoLargura(int** matriz, int verticeOrigem,int nV)
 {
 	printf("\n\nVertice origem: %d \n", verticeOrigem);
@@ -696,7 +694,7 @@ int main()
 	//as duas linhas abaixo foram utilizadas para garantir o padrão para a execução a ser utilizado pelo professor
 	//char * arquivo1 = argv[1];
 	//char * arquivo2 = argv[2];
-	char arquivo1[] = "dados.txt";
+	char arquivo1[] = "grafo_9815.txt";
 	char arquivo2[] = "saida.txt";
 
 	Grafo* graf = carrega(arquivo1, arquivo2); //carrega o grafo
